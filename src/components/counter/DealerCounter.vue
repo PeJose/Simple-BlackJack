@@ -1,5 +1,5 @@
 <template>
-  <base-counter :count="DealerCounter" :state="'lost'"></base-counter>
+  <base-counter :count="DealerCounter" :side="'Dealer\'s'"></base-counter>
 </template>
 
 <script>

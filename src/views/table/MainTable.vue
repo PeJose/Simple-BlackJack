@@ -6,6 +6,7 @@
       </v-col>
       <v-col cols="8" align="center">
         <v-card
+          class="rounded-lg"
           :color="$vuetify.theme.themes[theme].sheets"
           elevation="8"
           height="85vh"
@@ -13,8 +14,8 @@
         >
           <v-container fill-height>
             <v-row>
-              <v-col>
-                <dealer-counter></dealer-counter>
+              <v-col class="px-10">
+                <dashboard></dashboard>
               </v-col>
             </v-row>
             <v-row>
@@ -27,17 +28,12 @@
                 <player-pile></player-pile>
               </v-col>
             </v-row>
-            <v-row>
-              <v-col>
-                <player-counter></player-counter>
-              </v-col>
-            </v-row>
           </v-container>
         </v-card>
       </v-col>
       <v-col cols="2" align="center">
         <v-card
-          class="px-5"
+          class="rounded-lg px-5"
           height="85vh"
           elevation="8"
           :color="$vuetify.theme.themes[theme].sheets"
@@ -66,8 +62,7 @@ import HistoryTopScoreList from "@/components/history/HistoryTopScoreList.vue";
 import ActionsList from "@/components/actions/ActionsList.vue";
 import DealerPile from "@/components/piles/DealerPile.vue";
 import PlayerPile from "@/components/piles/PlayerPile.vue";
-import DealerCounter from "@/components/counter/DealerCounter.vue";
-import PlayerCounter from "@/components/counter/PlayerCounter.vue";
+import Dashboard from "../../components/dashboard/Dashboard.vue";
 export default {
   name: "MainTable",
   components: {
@@ -76,8 +71,7 @@ export default {
     ActionsList,
     DealerPile,
     PlayerPile,
-    DealerCounter,
-    PlayerCounter,
+    Dashboard,
   },
   data() {
     return {};

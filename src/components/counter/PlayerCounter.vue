@@ -1,5 +1,5 @@
 <template>
-  <base-counter :count="PlayerCounter" :state="'win'"></base-counter>
+  <base-counter :count="PlayerCounter" :side="'Player\'s'"></base-counter>
 </template>
 
 <script>

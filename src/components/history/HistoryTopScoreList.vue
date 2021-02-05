@@ -1,7 +1,7 @@
 <template>
   <v-card
+    class=" rounded-lg py-5"
     :color="$vuetify.theme.themes[theme].accent1"
-    class="py-5"
     elevation="8"
   >
     <v-card-text>
@@ -11,13 +11,13 @@
       <v-list-item v-for="(score, index) in TopScore" :key="index">
         <v-list-item-content>
           <v-list-item-title
-            >{{ index + 1 }}. Name: {{ score.name }}</v-list-item-title
-          >
-          <v-list-item-subtitle>Score: {{ score.value }}</v-list-item-subtitle>
+            >{{ index + 1 }}. Score: {{ score.value }}$
+          </v-list-item-title>
+          <v-list-item-subtitle> Date: {{ score.date }}</v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
-    </v-list></v-card
-  >
+    </v-list>
+  </v-card>
 </template>
 
 <script>

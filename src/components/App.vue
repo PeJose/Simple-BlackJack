@@ -23,22 +23,6 @@
     </v-app-bar>
     <v-main>
       <main-table></main-table>
-      <v-dialog v-model="showModal" max-width="290">
-        <v-card>
-          <v-card-title>
-            You {{ modalText }} a round!
-            <v-icon class="ml-5" color="black">
-              mdi-emoticon-{{ modalEmoticon }}-outline
-            </v-icon>
-          </v-card-title>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="green darken-1" text @click="showModal = false">
-              Ok
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
     </v-main>
   </v-app>
 </template>
@@ -52,30 +36,34 @@ export default {
   },
   data() {
     return {
-      showModal: false,
-      modalText: "",
-      modalEmoticon: "",
+      betError: "",
+      bet: 0,
     };
   },
   async created() {
     if (localStorage.getItem("black-jack-deck-id")) {
-      await this.$store.commit(
-        "save_id",
-        localStorage.getItem("black-jack-deck-id")
-      );
-      await this.$store.dispatch("reshuffle_deck");
+      this.$store.commit("save_id", localStorage.getItem("black-jack-deck-id"));
+      this.$store.dispatch("reshuffle_deck");
     } else {
       await this.$store.dispatch("get_deck");
     }
     await this.$store.dispatch("init_round");
-    // ! this.$store.dispatch("save_to_history");
   },
   computed: {
     theme() {
       return this.$vuetify.theme.dark ? "dark" : "light";
     },
-    RoundState() {
-      return this.$store.getters.RoundState;
+    Money() {
+      return this.$store.getters.Money;
+    },
+  },
+  methods: {
+    betMoney() {
+      if (this.bet > this.Money) {
+        this.betError = "You bet too much money";
+      } else {
+        this.$store.commit("set_bet");
+      }
     },
   },
   watch: {

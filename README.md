@@ -1,4 +1,4 @@
-# black-jack
+# Simple-BlackJack
 It is simple implementation of black jack game made in vue.js.
 
 To test the Simple BlackJack application, you need to use 

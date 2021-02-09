@@ -11,9 +11,12 @@ const state = {
   round_state: 0,
   round_count: 1,
   player_cards: [],
+  player_count: 0,
   dealer_cards: [],
+  dealer_count: 0,
   temp_cards: [],
   history: [],
+  top_score: [],
 };
 
 const getters = {
@@ -38,8 +41,8 @@ const getters = {
   DealerCards: (state) => {
     return state.dealer_cards;
   },
-  TopScore: () => {
-    return JSON.parse(localStorage.getItem("black-jack-top-score"));
+  TopScore: (state) => {
+    return state.top_score;
   },
   PlayerCounter: (state) => {
     const cards = JSON.parse(JSON.stringify(state.player_cards));
@@ -56,6 +59,7 @@ const getters = {
         }
       }
     }
+    state.player_count = sum;
     return sum;
   },
   DealerCounter: (state) => {
@@ -75,6 +79,7 @@ const getters = {
         }
       }
     }
+    state.dealer_count = sum;
     return sum;
   },
 };
@@ -138,8 +143,16 @@ const mutations = {
     state.history.push({
       round_count: state.round_count,
       round_state: state.round_state,
-      player_cards: state.player_cards,
-      dealer_cards: state.dealer_cards,
+      player_cards: state.player_cards
+        .map(function(elem) {
+          return elem.value;
+        })
+        .join(","),
+      dealer_cards: state.dealer_cards
+        .map(function(elem) {
+          return elem.value;
+        })
+        .join(","),
       bet: state.bet,
       money: state.money,
     });
@@ -147,26 +160,60 @@ const mutations = {
   calculate_win(state) {
     state.money += state.bet * 1.5;
   },
+  load_top_score(state) {
+    state.top_score = JSON.parse(localStorage.getItem("black-jack-top-score"));
+  },
   add_top_score(state) {
-    const top_score =
-      localStorage.getItem("black-jack-top-score") === null
-        ? []
-        : JSON.parse(localStorage.getItem("black-jack-top-score"));
-    const timeElapsed = Date.now();
-    const today = new Date(timeElapsed);
-    top_score.push({ date: today.toLocaleDateString(), value: state.money });
-    top_score.sort((a, b) =>
-      a.value > b.value ? -1 : b.value > a.value ? 1 : 0
-    );
-    if (top_score.length > 5) {
-      top_score.pop();
+    if (state.money !== 0) {
+      const top_score =
+        localStorage.getItem("black-jack-top-score") === null
+          ? []
+          : JSON.parse(localStorage.getItem("black-jack-top-score"));
+      const timeElapsed = Date.now();
+      const today = new Date(timeElapsed);
+      top_score.push({ date: today.toLocaleDateString(), value: state.money });
+      top_score.sort((a, b) =>
+        a.value > b.value ? -1 : b.value > a.value ? 1 : 0
+      );
+      if (top_score.length > 5) {
+        top_score.pop();
+      }
+      state.top_score = top_score;
+      localStorage["black-jack-top-score"] = JSON.stringify(top_score);
     }
-
-    localStorage["black-jack-top-score"] = JSON.stringify(top_score);
   },
 };
 
 const actions = {
+  // * action for saving the game to the localstorage
+  save_state(context) {
+    localStorage["black-jack-save-state"] = JSON.stringify({
+      history: context.state.history,
+      money: context.state.money,
+      bet: context.state.bet,
+      round_state: context.state.round_state,
+      round_count: context.state.round_count,
+      player_cards: context.state.player_cards,
+      player_count: context.state.player_count,
+      dealer_cards: context.state.dealer_cards,
+      dealer_count: context.state.dealer_count,
+    });
+  },
+
+  load_state(context) {
+    let temp_round = JSON.parse(localStorage.getItem("black-jack-save-state"));
+    context.state.history = temp_round.history;
+    context.state.money = temp_round.money;
+    context.state.bet = temp_round.bet;
+    context.state.round_state = temp_round.round_state;
+    context.state.round_count = temp_round.round_count;
+    context.state.player_cards = temp_round.player_cards;
+    context.state.player_count = temp_round.player_count;
+    context.state.dealer_cards = temp_round.dealer_cards;
+    context.state.dealer_count = temp_round.dealer_count;
+  },
+
+  // * action which gets new deck id upon oppening the browser (if deck id is not present in local history) deck_count set to 6 for 6 decks
   async get_deck(context) {
     await axios
       .get("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6")
@@ -175,12 +222,15 @@ const actions = {
         localStorage["black-jack-deck-id"] = result.data.deck_id;
       });
   },
+
+  // * action shuffling deck upon oppening the browser (if deck id is present in local history)
   async reshuffle_deck() {
     await axios
       .get("https://deckofcardsapi.com/api/deck/" + state.deck_id + "/shuffle/")
       .then();
   },
 
+  // * action for resetting game
   restart_game({ commit, dispatch }) {
     commit("clear_bet");
     commit("clear_money");
@@ -188,10 +238,11 @@ const actions = {
     commit("clear_round_count");
     commit("clear_cards_dealer");
     commit("clear_cards_player");
+    dispatch("reshuffle_deck");
     dispatch("init_round");
   },
 
-  // * action for seting/reseting round
+  // * action for setting/resetting round
   async init_round(context) {
     if (!(context.state.round_count > 5) && context.state.money !== 0) {
       context.commit("clear_bet");
@@ -205,6 +256,7 @@ const actions = {
     }
   },
 
+  // * action initialising cards for player on start of the round
   async init_player(context) {
     await axios
       .get(
@@ -222,6 +274,7 @@ const actions = {
       });
   },
 
+  // * action initialising cards for dealer on start of the round
   async init_dealer(context) {
     await axios
       .get(
@@ -238,6 +291,7 @@ const actions = {
       });
   },
 
+  // * action saving rounds to aside history (note it is not for the current state save, only for history of rounds)
   save_to_history({ commit, getters }) {
     const player_cards = getters.get_player_cards;
     const dealer_cards = getters.get_dealer_cards;
@@ -283,6 +337,7 @@ const actions = {
     }, 1000);
   },
 
+  // * action handling the end of the round
   handle_round(context, round_state) {
     context.commit("change_round_state", round_state);
     if (round_state === 1) {
@@ -293,6 +348,7 @@ const actions = {
     context.dispatch("init_round");
   },
 
+  // * action checking the score of dealer
   check_score(context) {
     if (context.getters.DealerCounter > 21) {
       context.dispatch("handle_round", 1);

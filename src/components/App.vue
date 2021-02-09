@@ -1,26 +1,6 @@
 <template>
   <v-app :style="{ background: $vuetify.theme.themes[theme].background }">
-    <v-app-bar app :color="$vuetify.theme.themes[theme].navbar" elevation="10">
-      <v-spacer></v-spacer>
-      <div class="d-flex align-center">
-        <v-icon large color="black">mdi-cards-spade</v-icon>
-        <v-icon large color="red" class="mx-3">mdi-cards-heart</v-icon>
-        <h1 :style="{ color: $vuetify.theme.themes[theme].logo }">
-          Simple-BlackJack.
-        </h1>
-        <v-icon large color="black" class="mx-3">mdi-cards-club</v-icon>
-        <v-icon large color="red">mdi-cards-diamond</v-icon>
-      </div>
-      <v-spacer></v-spacer>
-      <v-switch
-        append-icon="mdi-weather-night"
-        light
-        class="pt-5"
-        color="yellow"
-        v-model="$vuetify.theme.dark"
-        inset
-      ></v-switch>
-    </v-app-bar>
+    <navbar></navbar>
     <v-main>
       <main-table></main-table>
     </v-main>
@@ -29,10 +9,12 @@
 
 <script>
 import MainTable from "@/views/table/MainTable.vue";
+import Navbar from "./navbar/Navbar.vue";
 export default {
   name: "App",
   components: {
     MainTable,
+    Navbar,
   },
   data() {
     return {
@@ -40,14 +22,34 @@ export default {
       bet: 0,
     };
   },
+  beforeRouteLeave(to, from, next) {
+    if (this.confirmStayInDirtyForm()) {
+      next(false);
+    } else {
+      this.$store.dispatch("save_state");
+      next();
+    }
+  },
   async created() {
-    if (localStorage.getItem("black-jack-deck-id")) {
+    window.addEventListener("beforeunload", this.beforeWindowUnload);
+    if (localStorage.getItem("black-jack-deck-id") !== null) {
       this.$store.commit("save_id", localStorage.getItem("black-jack-deck-id"));
       this.$store.dispatch("reshuffle_deck");
     } else {
       await this.$store.dispatch("get_deck");
     }
-    await this.$store.dispatch("init_round");
+    if (localStorage.getItem("black-jack-top-score") !== null) {
+      this.$store.commit("load_top_score");
+    }
+    if (localStorage.getItem("black-jack-save-state") !== null) {
+      this.$store.dispatch("load_state");
+    } else {
+      await this.$store.dispatch("init_round");
+    }
+  },
+
+  beforeDestroy() {
+    window.removeEventListener("beforeunload", this.beforeWindowUnload);
   },
   computed: {
     theme() {
@@ -58,20 +60,18 @@ export default {
     },
   },
   methods: {
-    betMoney() {
-      if (this.bet > this.Money) {
-        this.betError = "You bet too much money";
-      } else {
-        this.$store.commit("set_bet");
-      }
+    confirmLeave() {
+      return window.confirm(
+        "Do you really want to exit your game? Changes will be saved"
+      );
     },
-  },
-  watch: {
-    RoundState: function(newVal) {
-      if (newVal === "win" || newVal === "lose") {
-        this.showModal = true;
-        this.modalText = newVal === "win" ? "won" : "lost";
-        this.modalEmoticon = newVal === "win" ? "happy" : "sad";
+    confirmStayInDirtyForm() {
+      return !this.confirmLeave();
+    },
+    beforeWindowUnload(e) {
+      if (this.confirmStayInDirtyForm()) {
+        e.preventDefault();
+        e.returnValue = "";
       }
     },
   },
